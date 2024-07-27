@@ -55,6 +55,6 @@ jobs:
         env:
           BASE_URL: localhost:5000
         with:
-          path: RateLimitersDemo/LoadTests/script.js
+          path: ./LoadTests/script.js
           parallel: true
           fail-fast: true
