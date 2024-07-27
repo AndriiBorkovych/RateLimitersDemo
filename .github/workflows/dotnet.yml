@@ -17,9 +17,6 @@ jobs:
         ports:
           - 5000:80
 
-    env:
-      BASE_URL: localhost:5000
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -53,7 +50,7 @@ jobs:
       - name: Run local k6 test
         uses: grafana/run-k6-action@v1
         env:
-          BASE_URL: ${{ env.BASE_URL }}
+          BASE_URL: localhost:5000
         with:
           path: RateLimitersDemo/LoadTests/script.js
           parallel: true
