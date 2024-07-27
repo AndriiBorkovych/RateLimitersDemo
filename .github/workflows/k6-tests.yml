@@ -2,11 +2,9 @@ name: K6 Load Test
 
 on:
   push:
-    branches:
-      - main
+    branches: ["master"]
   pull_request:
-    branches:
-      - main
+    branches: ["master"]
 
 jobs:
   build:
@@ -18,9 +16,9 @@ jobs:
         options: --privileged
         ports:
           - 5000:80
-    
+
     env:
-        BASE_URL: http://localhost:5000
+      BASE_URL: http://localhost:5000
 
     steps:
       - name: Checkout repository
