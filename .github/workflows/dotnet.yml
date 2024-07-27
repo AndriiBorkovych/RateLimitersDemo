@@ -54,5 +54,7 @@ jobs:
         uses: grafana/run-k6-action@v1
         with:
           path: RateLimitersDemo/LoadTests/script.js
+          parallel: true
+          fail-fast: true
         env:
           BASE_URL: ${{ env.BASE_URL }}
