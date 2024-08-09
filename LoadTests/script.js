@@ -12,6 +12,12 @@ export let options = {
     thresholds: {
         http_req_duration: ['p(95)<5000'], // 95% of requests should be below 5s
     },
+    cloud: {
+        // Project: Default project
+        projectID: 3706889,
+        // Test runs with the same name groups test runs together.
+        name: 'DemoTest'
+      }
 };
 
 export default function () {

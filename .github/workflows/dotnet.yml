@@ -54,7 +54,11 @@ jobs:
         uses: grafana/run-k6-action@v1
         env:
           BASE_URL: localhost:5000
+          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+          K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
         with:
           path: LoadTests/script.js
+          cloud-run-locally: false
+          cloud-comment-on-pr: true
           parallel: true
-          fail-fast: true
+          fail-fast: false
