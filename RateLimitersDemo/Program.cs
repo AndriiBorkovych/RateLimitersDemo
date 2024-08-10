@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
+using RateLimitersDemo;
 using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -13,7 +15,7 @@ builder.Services.AddRateLimiter(rateLimiterOptions =>
     rateLimiterOptions.GlobalLimiter = PartitionedRateLimiter.CreateChained(
          PartitionedRateLimiter.Create<HttpContext, string>(
             httpContext => RateLimitPartition.GetConcurrencyLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+                partitionKey: httpContext.Connection.Id,
                 factory: _ => new ConcurrencyLimiterOptions
                 {
                     PermitLimit = 1,
@@ -60,7 +62,9 @@ builder.Services.AddRateLimiter(rateLimiterOptions =>
 
 var app = builder.Build();
 
-app.UseSerilogRequestLogging();
+app.UseMiddleware<RequestLoggingMiddleware>();
+
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
