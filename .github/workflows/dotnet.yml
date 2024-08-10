@@ -56,7 +56,6 @@ jobs:
           K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
         with:
           path: LoadTests/script.js
-          args: -e BASE_URL: localhost:5000
           cloud-run-locally: false
           cloud-comment-on-pr: true
           parallel: true
