@@ -54,5 +54,5 @@ jobs:
         with:
           path: LoadTests/script.js
           cloud-run-locally: false
-          parallel: true
+          parallel: false
           fail-fast: false
