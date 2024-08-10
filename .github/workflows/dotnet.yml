@@ -43,9 +43,6 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Production
 
-      - name: Wait for services to be ready
-        run: sleep 30
-
       - name: Setup K6
         uses: grafana/setup-k6-action@v1
 
@@ -57,6 +54,5 @@ jobs:
         with:
           path: LoadTests/script.js
           cloud-run-locally: false
-          cloud-comment-on-pr: true
           parallel: true
           fail-fast: false
