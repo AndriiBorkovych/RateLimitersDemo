@@ -17,9 +17,6 @@ jobs:
         ports:
           - 5000:80
 
-    env:
-      BASE_URL: localhost:5000
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -41,20 +38,21 @@ jobs:
       - name: Publish
         run: dotnet publish --configuration Release --no-build --output ./out
 
-      - name: Build Docker image
-        run: docker build -t demoapp -f RateLimitersDemo/Dockerfile .
-
-      - name: Run Docker container
-        run: docker run -d -p 5000:80 demoapp
+      - name: Start application
+        run: dotnet run --project RateLimitersDemo --urls "http://localhost:5000" &
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
 
       - name: Setup K6
         uses: grafana/setup-k6-action@v1
 
-      - name: Run local k6 test
+      - name: Run k6 test
         uses: grafana/run-k6-action@v1
         env:
-          BASE_URL: ${{ env.BASE_URL }}
+          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+          K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
         with:
-          path: RateLimitersDemo/LoadTests/script.js
-          parallel: true
-          fail-fast: true
+          path: LoadTests/script.js
+          cloud-run-locally: false
+          parallel: false
+          fail-fast: false
