@@ -38,11 +38,10 @@ jobs:
       - name: Publish
         run: dotnet publish --configuration Release --no-build --output ./out
 
-      - name: Build Docker image
-        run: docker build -t demoapp -f RateLimitersDemo/Dockerfile .
-
-      - name: Run Docker container
-        run: docker run -d -p 5000:80 demoapp
+      - name: Start application
+        run: dotnet run --project RateLimitersDemo --urls "http://localhost:5000" &
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
 
       - name: Wait for services to be ready
         run: sleep 30
@@ -50,7 +49,7 @@ jobs:
       - name: Setup K6
         uses: grafana/setup-k6-action@v1
 
-      - name: Run local k6 test
+      - name: Run k6 test
         uses: grafana/run-k6-action@v1
         env:
           BASE_URL: localhost:5000

@@ -21,29 +21,6 @@ export let options = {
 };
 
 export default function () {
-  /*console.log(`Execution context
-
-    Instance info
-    -------------
-    Vus active: ${exec.instance.vusActive}
-    Iterations completed: ${exec.instance.iterationsCompleted}
-    Iterations interrupted:  ${exec.instance.iterationsInterrupted}
-    Iterations completed:  ${exec.instance.iterationsCompleted}
-    Iterations active:  ${exec.instance.vusActive}
-    Initialized vus:  ${exec.instance.vusInitialized}
-    Time passed from start of run(ms):  ${exec.instance.currentTestRunDuration}
-    
-    Test info
-    ---------
-    All test options: ${exec.test.options}
-    
-    VU info
-    -------
-    Iteration id: ${exec.vu.iterationInInstance}
-    Iteration in scenario: ${exec.vu.iterationInScenario}
-    VU ID in instance: ${exec.vu.idInInstance}
-    VU ID in test: ${exec.vu.idInTest}
-    VU tags: ${exec.vu.tags}`);*/
 
     let res = http.get(`http://${baseUrl}/WeatherForecast`);
     check(res, {
