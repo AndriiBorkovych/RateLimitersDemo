@@ -41,7 +41,7 @@ jobs:
       - name: Start application
         run: dotnet run --project RateLimitersDemo --urls "http://localhost:5000" &
         env:
-          ASPNETCORE_ENVIRONMENT: Production
+          ASPNETCORE_ENVIRONMENT: Development
 
       - name: Setup K6
         uses: grafana/setup-k6-action@v1

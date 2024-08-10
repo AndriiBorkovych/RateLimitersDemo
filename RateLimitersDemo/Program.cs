@@ -1,5 +1,9 @@
 using System.Threading.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using RateLimitersDemo;
+using RateLimitersDemo.Persistence;
+using RateLimitersDemo.Persistence.Seed;
+using RateLimitersDemo.RateLimiting;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,11 +12,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddScoped<IDataSeeder, DataSeeder>();
+
 builder.Services.AddSerilog((_, lc) => lc.ReadFrom.Configuration(builder.Configuration).WriteTo.Seq("http://localhost:5341"));
 
 builder.Services.AddRateLimiter(rateLimiterOptions =>
 {
-    rateLimiterOptions.GlobalLimiter = PartitionedRateLimiter.CreateChained(
+    /*rateLimiterOptions.GlobalLimiter = PartitionedRateLimiter.CreateChained(
          PartitionedRateLimiter.Create<HttpContext, string>(
             httpContext => RateLimitPartition.GetConcurrencyLimiter(
                 partitionKey: httpContext.Connection.Id,
@@ -29,15 +38,25 @@ builder.Services.AddRateLimiter(rateLimiterOptions =>
                 {
                     PermitLimit = 100,
                     Window = TimeSpan.FromMinutes(1)
-                })));
+                })));*/
 
-    rateLimiterOptions.AddPolicy("registration", httpContext =>
+    rateLimiterOptions.AddPolicy(PolicyConstants.Fixed, httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = 50,
                 Window = TimeSpan.FromMinutes(1)
+            }));
+
+    rateLimiterOptions.AddPolicy(PolicyConstants.Concurrent, httpContext =>
+       RateLimitPartition.GetConcurrencyLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+            factory: _ => new ConcurrencyLimiterOptions
+            {
+                PermitLimit = 1,
+                QueueLimit = 5,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
             }));
 
     rateLimiterOptions.OnRejected = async (context, cancellationToken) =>
@@ -54,13 +73,20 @@ builder.Services.AddRateLimiter(rateLimiterOptions =>
 
         context.HttpContext.RequestServices.GetService<ILoggerFactory>()?
             .CreateLogger("Microsoft.AspNetCore.RateLimitingMiddleware")
-            .LogWarning("Rejected request: {EndpointName}, reason: {ReasonPhrase}", context.HttpContext.Request.Path, reasonPhrase);
+            .LogWarning("Rejected request: {EndpointName}, reason: {ReasonPhrase}, retry after: {RetryInSeconds}s", context.HttpContext.Request.Path, reasonPhrase, retryAfter.TotalSeconds);
 
         await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken);
     };
 });
 
 var app = builder.Build();
+
+/*using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+
+    seeder.CreateProducts();
+}*/
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 
