@@ -1,4 +1,3 @@
-using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using RateLimitersDemo;
 using RateLimitersDemo.Persistence;
@@ -19,65 +18,7 @@ builder.Services.AddScoped<IDataSeeder, DataSeeder>();
 
 builder.Services.AddSerilog((_, lc) => lc.ReadFrom.Configuration(builder.Configuration).WriteTo.Seq("http://localhost:5341"));
 
-builder.Services.AddRateLimiter(rateLimiterOptions =>
-{
-    /*rateLimiterOptions.GlobalLimiter = PartitionedRateLimiter.CreateChained(
-         PartitionedRateLimiter.Create<HttpContext, string>(
-            httpContext => RateLimitPartition.GetConcurrencyLimiter(
-                partitionKey: httpContext.Connection.Id,
-                factory: _ => new ConcurrencyLimiterOptions
-                {
-                    PermitLimit = 1,
-                    QueueLimit = 5,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-                })),
-         PartitionedRateLimiter.Create<HttpContext, string>(
-            httpContext => RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 100,
-                    Window = TimeSpan.FromMinutes(1)
-                })));*/
-
-    rateLimiterOptions.AddPolicy(PolicyConstants.Fixed, httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 50,
-                Window = TimeSpan.FromMinutes(1)
-            }));
-
-    rateLimiterOptions.AddPolicy(PolicyConstants.Concurrent, httpContext =>
-       RateLimitPartition.GetConcurrencyLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
-            factory: _ => new ConcurrencyLimiterOptions
-            {
-                PermitLimit = 1,
-                QueueLimit = 5,
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-            }));
-
-    rateLimiterOptions.OnRejected = async (context, cancellationToken) =>
-    {
-        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-        {
-            context.HttpContext.Response.Headers.RetryAfter = retryAfter.TotalSeconds.ToString();
-        }
-
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-
-        context.Lease.TryGetMetadata(MetadataName.ReasonPhrase, out var reasonPhrase);
-        reasonPhrase ??= "Fixed window limit was reached";
-
-        context.HttpContext.RequestServices.GetService<ILoggerFactory>()?
-            .CreateLogger("Microsoft.AspNetCore.RateLimitingMiddleware")
-            .LogWarning("Rejected request: {EndpointName}, reason: {ReasonPhrase}, retry after: {RetryInSeconds}s", context.HttpContext.Request.Path, reasonPhrase, retryAfter.TotalSeconds);
-
-        await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken);
-    };
-});
+builder.Services.AddCustomRateLimiters(builder.Configuration);
 
 var app = builder.Build();
 
