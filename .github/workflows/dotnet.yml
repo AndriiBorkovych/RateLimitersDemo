@@ -4,7 +4,7 @@ on:
   push:
     branches: ["master"]
   pull_request:
-    branches: ["master"]
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -50,7 +50,7 @@ jobs:
           else
             echo "This is a pr in other branch"
           fi
-
+      # test
       - name: Output all variables
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
