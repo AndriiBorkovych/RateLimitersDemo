@@ -51,6 +51,11 @@ jobs:
             echo "This is a pr in other branch"
           fi
 
+      - name: Output all variables
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       #- name: Setup K6
       #  uses: grafana/setup-k6-action@v1
 
