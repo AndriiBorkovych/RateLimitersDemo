@@ -45,8 +45,8 @@ jobs:
 
       - name: Tests with coverage
         run: |
-          if [ ${{ github.event.pull_request.base }} == 'master' ]; then
-            echo "This is a pr in master"
+          if [ ${{ github.base_ref }} == 'master' ]; then
+            echo "This is a pr in master branch"
           else
             echo "This is a pr in other branch"
           fi
