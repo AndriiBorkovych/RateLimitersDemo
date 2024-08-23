@@ -18,11 +18,9 @@ public class CustomSlidingRateLimitPolicy(
             };
 
     public RateLimitPartition<string> GetPartition(HttpContext httpContext)
-    {        
-        var userId = httpContext.User?.Identity?.IsAuthenticated == true
-            ? httpContext.User.Identity.Name
-            : "anonymous";
-        var partitionKey = $"{userId}-{httpContext.Request.Path}";
+    {
+        var userIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var partitionKey = $"{userIp}-{httpContext.Request.Path}";
 
         var customOptions = options.Value;
 
@@ -30,19 +28,21 @@ public class CustomSlidingRateLimitPolicy(
             partitionKey,
             _ => new SlidingWindowRateLimiterOptions
             {
-                PermitLimit = customOptions.PermitLimit,
+                // PermitLimit / SegmentsPerWindow = segments count
+                // Window / SegmentsPerWindow = duration of each window
+                PermitLimit = 10,
+                Window = TimeSpan.FromSeconds(5),
+                SegmentsPerWindow = 5,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = customOptions.QueueLimit,
-                Window = TimeSpan.FromSeconds(customOptions.Window),
-                SegmentsPerWindow = customOptions.SegmentsPerWindow
+                QueueLimit = 5
             });
     }
 }
 
 public class CustomRateLimitOptions
 {
-    public int PermitLimit { get; internal set; }
-    public int QueueLimit { get; internal set; }
-    public double Window { get; internal set; }
-    public int SegmentsPerWindow { get; internal set; }
+    public int PermitLimit { get; set; }
+    public int QueueLimit { get; set; }
+    public double Window { get; set; }
+    public int SegmentsPerWindow { get; set; }
 }

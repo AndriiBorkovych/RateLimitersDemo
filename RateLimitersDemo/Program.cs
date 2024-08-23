@@ -29,7 +29,7 @@ var app = builder.Build();
     seeder.CreateProducts();
 }*/
 
-app.UseMiddleware<RequestLoggingMiddleware>();
+//app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseRateLimiter();
 

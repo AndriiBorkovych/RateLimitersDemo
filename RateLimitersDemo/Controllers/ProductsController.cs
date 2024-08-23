@@ -21,7 +21,7 @@ public class ProductsController(ApplicationDbContext context) : ControllerBase
     }
 
     [HttpGet("GetById/{id}")]
-    [EnableRateLimiting(PolicyConstants.Fixed)]
+    [EnableRateLimiting(PolicyConstants.Token)]
     public async Task<ActionResult<Product>> GetById(int id)
     {
         var product = await context.Products.FirstOrDefaultAsync(p => p.Id == id);
@@ -41,20 +41,21 @@ public class ProductsController(ApplicationDbContext context) : ControllerBase
     }
 
     [HttpGet("Paid")]
-    [EnableRateLimiting(PolicyConstants.Concurrent)]
+    [EnableRateLimiting(PolicyConstants.CustomSliding)]
     public async Task<ActionResult<IEnumerable<Product>>> GetPaid()
     {
         return await context.Products.Where(p => p.IsPaid).ToListAsync();
     }
 
     [HttpGet("Unpaid")]
-    [EnableRateLimiting(PolicyConstants.Fixed)]
+    [EnableRateLimiting(PolicyConstants.Concurrent)]
     public async Task<ActionResult<IEnumerable<Product>>> GetUnpaid()
     {
         return await context.Products.Where(p => !p.IsPaid).ToListAsync();
     }
 
     [HttpPost("Pay/{id}")]
+    [EnableRateLimiting(PolicyConstants.Concurrent)]
     public async Task<IActionResult> Pay(int id)
     {
         var product = await context.Products.FirstOrDefaultAsync(p => p.Id == id);

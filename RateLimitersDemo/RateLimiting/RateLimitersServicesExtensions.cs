@@ -53,15 +53,17 @@ public static class RateLimitersServicesExtensions
 
             rateLimiterOptions.AddPolicy<string, CustomSlidingRateLimitPolicy>(PolicyConstants.CustomSliding);
 
-            rateLimiterOptions.AddTokenBucketLimiter(PolicyConstants.Token, options =>
-            {
-                options.TokenLimit = 100;
-                options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                options.QueueLimit = 5;
-                options.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
-                options.TokensPerPeriod = 20;
-                options.AutoReplenishment = true;
-            });
+            rateLimiterOptions.AddPolicy(PolicyConstants.Token, httpContext =>
+                RateLimitPartition.GetTokenBucketLimiter(
+                     partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+                     factory: _ => new TokenBucketRateLimiterOptions
+                     {
+                         TokenLimit = 1,
+                         TokensPerPeriod = 10,
+                         ReplenishmentPeriod = TimeSpan.FromSeconds(3),
+                         QueueLimit = 5,
+                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                     }));
 
             rateLimiterOptions.OnRejected = async (context, cancellationToken) =>
             {
@@ -73,7 +75,7 @@ public static class RateLimitersServicesExtensions
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 
                 context.Lease.TryGetMetadata(MetadataName.ReasonPhrase, out var reasonPhrase);
-                reasonPhrase ??= "Fixed window limit was reached";
+                reasonPhrase ??= "Request limit was reached";
 
                 context.HttpContext.RequestServices.GetService<ILoggerFactory>()?
                     .CreateLogger("Microsoft.AspNetCore.RateLimitingMiddleware")
