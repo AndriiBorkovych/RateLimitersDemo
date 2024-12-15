@@ -4,7 +4,7 @@ on:
   push:
     branches: ["master"]
   pull_request:
-    branches: ["master"]
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -43,16 +43,29 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Development
 
-      - name: Setup K6
-        uses: grafana/setup-k6-action@v1
-
-      - name: Run k6 test
-        uses: grafana/run-k6-action@v1
+      - name: Tests with coverage
+        run: |
+          if [ ${{ github.base_ref }} == 'master' ]; then
+            echo "This is a pr in master branch"
+          else
+            echo "This is a pr in other branch"
+          fi
+      # test
+      - name: Output all variables
         env:
-          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
-          K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
-        with:
-          path: LoadTests/script.js
-          cloud-run-locally: false
-          parallel: false
-          fail-fast: false
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      #- name: Setup K6
+      #  uses: grafana/setup-k6-action@v1
+
+      #- name: Run k6 test
+      #  uses: grafana/run-k6-action@v1
+      #  env:
+      #    K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+      #    K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
+      #  with:
+      #    path: LoadTests/script.js
+      #    cloud-run-locally: false
+      #    parallel: false
+      #    fail-fast: false
